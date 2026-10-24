@@ -59,11 +59,11 @@ Nếu chỉ muốn lưu hình, không mở cửa sổ:
 
 Các lệnh trên dùng model đã lưu, không huấn luyện lại.
 
-## Báo cáo và hình kết quả
+## Hình kết quả
 
-- [Báo cáo môn học (.docx)](outputs/Bao_cao_nhan_dien_cu_chi_tay.docx)
 - [Confusion matrix](outputs/figures/confusion_matrix.png)
 - [So sánh KNN và SVM](outputs/figures/knn_vs_svm.png)
 - [Ví dụ dự đoán 8 ảnh test](outputs/figures/test_predictions.png)
 
 SVM đạt accuracy **94,58%** trên 960 ảnh test. Các tập còn trùng người chụp; đây không phải accuracy webcam hay đánh giá hoàn toàn trên người mới.
+
