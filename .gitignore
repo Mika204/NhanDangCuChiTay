@@ -1,0 +1,26 @@
+# Python and local development environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.idea/
+.vscode/
+
+# Local datasets (download separately)
+ann_train_val/
+hagrid_30k/
+
+# Trained artifacts and generated outputs
+models/
+outputs/
+
+# Local secrets and machine settings
+.env
+.env.*
+!.env.example
+.aws/
+.codex/
+*.log
+Thumbs.db
+Desktop.ini
