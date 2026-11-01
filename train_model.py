@@ -1,4 +1,4 @@
-"""Chuan bi HOG (buoc 6) va train/so sanh validation (buoc 7)."""
+"""Chuan bi HOG va train/so sanh validation."""
 
 import csv
 import argparse

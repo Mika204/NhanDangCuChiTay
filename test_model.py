@@ -1,4 +1,4 @@
-"""Buoc 9: load model va du doan lai tu anh goc trong tap test."""
+"""load model va du doan lai tu anh goc trong tap test."""
 
 import argparse
 import csv
@@ -94,7 +94,6 @@ def demo(count=8, seed=None, show=True):
     print(f"Valid: {len(success)}/{len(rows)} | Correct: {correct}/{len(success)}")
     print("HOG recomputed from images matches cached features for valid samples.")
     print("Saved:", output)
-    print("Dung o buoc 9; chua mo webcam.")
     if show:
         plt.show()
     plt.close(fig)
