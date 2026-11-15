@@ -1,4 +1,4 @@
-﻿# Nhận diện cử chỉ tay
+# Nhận diện cử chỉ tay
 
 Chương trình sử dụng HOG và SVM để nhận diện 8 cử chỉ: `fist`, `palm`, `like`, `dislike`, `peace`, `ok`, `one`, `stop`.
 
@@ -24,14 +24,14 @@ Model nằm trong Release thay vì Git vì file model khoảng 230 MB. Dataset v
 .\.venv\Scripts\python.exe .\main.py webcam
 ```
 
-1. Đưa bàn tay lên trước camera.
-2. Nhấn **R**, kéo chuột khoanh sát toàn bộ bàn tay.
-3. Nhấn **Enter** để xác nhận và tự bắt đầu dự đoán.
-4. Xem **Gesture** và **Confidence** trên cửa sổ webcam.
+- Chương trình tự động phát hiện và theo dõi bàn tay (MediaPipe tracking) với bộ khung xương bàn tay trực quan.
+- **Phím tắt hỗ trợ:**
+  - **Space**: Tạm dừng hoặc tiếp tục nhận diện.
+  - **G**: Chuyển đổi giữa chế độ **MediaPipe AI Tracking** và **Fixed Guide Box** (khung chữ nhật cố định ở giữa màn hình để đưa tay vào).
+  - **M**: Bật/Tắt chế độ lật gương (Mirror view).
+  - **Q** hoặc **Esc**: Thoát.
 
-**Space** tạm dừng/chạy tiếp; **R** chọn lại vùng tay; **Q** hoặc **Esc** thoát.
-
-Khung không tự di chuyển theo tay. Giữ tay trong khung, đủ sáng và hạn chế nền. Chương trình chưa tự phát hiện trường hợp không có tay. **Webcam chỉ cần model đã tải, không cần dataset hoặc cache.**
+*Mẹo:* Đưa bàn tay đối diện camera trong điều kiện đủ sáng. **Webcam chỉ cần model đã tải, không cần dataset hoặc cache.**
 
 Nếu camera mặc định không mở được:
 
