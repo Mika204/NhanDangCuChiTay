@@ -1,7 +1,4 @@
-"""Entry point don gian cho demo anh va webcam."""
-
 import argparse
-
 
 def main():
     parser = argparse.ArgumentParser(description="Nhan dien cu chi tay - HOG + SVM")
