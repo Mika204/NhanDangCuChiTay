@@ -1,10 +1,3 @@
-"""Webcam demo nhan dien cu chi tay nang cao:
-Ho tro 3 che do phat hien ban tay:
-  1. MediaPipe Hands (Mac dinh, tu dong bam sat ban tay voi do chinh xac cao)
-  2. Fixed Guide Box (Khung dinh vi co dinh o giua man hinh - phim G)
-  3. OpenCV Skin Color Segmentation (Phuong phap co dien, tu dong fallback)
-Ket hop pipeline HOG + SVM da huan luyen tren dataset HaGRID.
-"""
 
 import argparse
 import time
@@ -35,7 +28,7 @@ def ensure_mediapipe_model():
             urllib.request.urlretrieve(MEDIAPIPE_MODEL_URL, str(model_path))
             print("Tai model MediaPipe thanh cong.")
         except Exception as exc:
-            print(f"Khong the tai model MediaPipe: {exc}. Se dung OpenCV fallback.")
+            print(f"Khong the tai model MediaPipe: {exc}.")
             return None
     return model_path
 
@@ -62,7 +55,7 @@ def init_mediapipe():
         )
         return HandLandmarker.create_from_options(options)
     except Exception as exc:
-        print(f"MediaPipe khong kha dung ({exc}). Su dung bo phat hien OpenCV.")
+        print(f"MediaPipe khong kha dung ({exc}).")
         return None
 
 
@@ -99,72 +92,6 @@ def get_mediapipe_bbox(frame, landmarker):
 
     if x2 - x1 < 25 or y2 - y1 < 25:
         return None
-
-    return (x1, y1, x2, y2)
-
-
-# --- OpenCV Fallback Hand Detection ---
-def segment_skin(frame):
-    blurred = cv2.GaussianBlur(frame, (5, 5), 0)
-    ycrcb = cv2.cvtColor(blurred, cv2.COLOR_BGR2YCrCb)
-    mask_ycrcb = cv2.inRange(ycrcb, (70, 133, 77), (255, 173, 127))
-
-    hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-    mask_hsv_warm = cv2.inRange(hsv, (0, 30, 60), (25, 200, 255))
-    mask_hsv_red = cv2.inRange(hsv, (160, 20, 60), (180, 200, 255))
-    mask_hsv = cv2.bitwise_or(mask_hsv_warm, mask_hsv_red)
-
-    mask = cv2.bitwise_and(mask_ycrcb, mask_hsv)
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=2)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
-    return mask
-
-
-def detect_hand_opencv(frame, face_cascade):
-    """Phat hien ban tay bang thuat toan OpenCV co dien (da + loai mat)."""
-    h, w = frame.shape[:2]
-    mask = segment_skin(frame)
-
-    # Loai bo mat
-    small_w, small_h = max(1, w // 2), max(1, h // 2)
-    small_frame = cv2.resize(frame, (small_w, small_h), interpolation=cv2.INTER_AREA)
-    gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(24, 24))
-
-    scale_x, scale_y = w / small_w, h / small_h
-    for face_x, face_y, face_w, face_h in faces:
-        x1, y1 = int(face_x * scale_x), int(face_y * scale_y)
-        x2, y2 = int((face_x + face_w) * scale_x), int((face_y + face_h) * scale_y)
-        pad_x, pad_y = int((x2 - x1) * 0.2), int((y2 - y1) * 0.2)
-        x1, y1 = max(0, x1 - pad_x), max(0, y1 - pad_y)
-        x2, y2 = min(w, x2 + pad_x), min(h, y2 + pad_y)
-        mask[y1:y2, x1:x2] = 0
-
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
-        return None
-
-    # Tim contour lon nhat khong phai toan man hinh
-    valid = []
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if 3000 < area < (w * h * 0.6):
-            valid.append((area, cnt))
-
-    if not valid:
-        return None
-
-    _, best_cnt = max(valid, key=lambda x: x[0])
-    bx, by, bw, bh = cv2.boundingRect(best_cnt)
-
-    # Crop hinh vuong nhe quanh ban tay
-    side = int(max(bw, bh) * 1.2)
-    cx, cy = bx + bw // 2, by + bh // 2
-    x1 = max(0, cx - side // 2)
-    y1 = max(0, cy - side // 2)
-    x2 = min(w, cx + side // 2)
-    y2 = min(h, cy + side // 2)
 
     return (x1, y1, x2, y2)
 
@@ -239,13 +166,10 @@ def run(camera=0):
 
     # Khoi tao MediaPipe
     landmarker = init_mediapipe()
-    has_mediapipe = landmarker is not None
+    if landmarker is None:
+        capture.release()
+        raise ValueError("Khong khoi tao duoc MediaPipe HandLandmarker.")
 
-    # OpenCV fallback
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-
-    # Che do hoat dong: 'mediapipe', 'guide_box', 'opencv'
-    mode = "mediapipe" if has_mediapipe else "guide_box"
     mirror_mode = True  # Lat guong de trai nghiem truc quan
     active = True       # Tam dung / tiep tuc
 
@@ -259,9 +183,8 @@ def run(camera=0):
     print("\n" + "=" * 55)
     print("=== CHUONG TRINH NHAN DIEN CU CHI TAY (HOG + SVM) ===")
     print("=" * 55)
-    print(f"- Che do mac dinh: {mode.upper()}")
+    print("- Che do phat hien: MEDIAPIPE")
     print("- Phim 'Space': Tam dung / Tiep tuc du doan")
-    print("- Phim 'g': Chuyen doi giua Tracking va Khung co dinh (Guide Box)")
     print("- Phim 'm': Bat / Tat lat guong (Mirror)")
     print("- Phim 'q' hoac 'Esc': Thoat")
     print("=" * 55 + "\n")
@@ -288,20 +211,10 @@ def run(camera=0):
             bbox = None
 
             # 1. Xac dinh bounding box theo che do
-            if mode == "mediapipe" and has_mediapipe:
-                bbox = get_mediapipe_bbox(frame, landmarker)
-            elif mode == "guide_box":
-                # Khung co dinh giua man hinh (240 x 240)
-                box_size = 240
-                x1 = (w - box_size) // 2
-                y1 = (h - box_size) // 2
-                bbox = (x1, y1, x1 + box_size, y1 + box_size)
-            elif mode == "opencv":
-                bbox = detect_hand_opencv(frame, face_cascade)
-
+            bbox = get_mediapipe_bbox(frame, landmarker)
             # 2. Lam muot bounding box giua cac frame de giam rung
             if bbox is not None:
-                if previous_bbox is not None and mode != "guide_box":
+                if previous_bbox is not None:
                     bbox = tuple(
                         round(0.7 * curr + 0.3 * prev)
                         for curr, prev in zip(bbox, previous_bbox)
@@ -312,12 +225,6 @@ def run(camera=0):
                 # Ve bounding box xanh la bao quanh ban tay
                 box_color = (0, 255, 0)
                 cv2.rectangle(display, (bx1, by1), (bx2, by2), box_color, 2)
-
-                if mode == "guide_box":
-                    cv2.putText(
-                        display, "Dat tay vao khung",
-                        (bx1, by1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.55, box_color, 2
-                    )
 
                 # 3. Du doan cu chi (moi 0.08s)
                 if active and (now - last_predict_time >= 0.08):
@@ -341,12 +248,12 @@ def run(camera=0):
             if not active:
                 status_text = "TAM DUNG (Press Space)"
                 status_color = (0, 200, 255)
-            elif bbox is None and mode != "guide_box":
-                status_text = "No hand detected"
+            elif bbox is None:
+                status_text = "Khong phat hien tay"
                 status_color = (0, 0, 255)
             elif stable_label:
                 conf_str = f" ({stable_conf:.1%})" if stable_conf else ""
-                status_text = f"GESTURE: {stable_label.upper()}{conf_str}"
+                status_text = f"CU CHI: {stable_label.upper()}{conf_str}"
                 status_color = (0, 255, 0)
             else:
                 status_text = "DANG NHAN DIEN..."
@@ -354,11 +261,11 @@ def run(camera=0):
 
             cv2.putText(display, status_text, (15, 38), cv2.FONT_HERSHEY_SIMPLEX, 0.85, status_color, 2)
 
-            mode_str = f"Mode: {mode.upper()} | Mirror: {'ON' if mirror_mode else 'OFF'} | FPS: {int(round(fps))}"
+            mode_str = f"Mode: MEDIAPIPE | Mirror: {'ON' if mirror_mode else 'OFF'} | FPS: {int(round(fps))}"
             cv2.putText(display, mode_str, (15, 68), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
 
             # Huong dan phim tat ben duoi
-            help_text = "Space: Pause | G: Guide/Tracking | M: Mirror | Q: Quit"
+            help_text = "Space: Pause | M: Mirror | Q: Quit"
             cv2.putText(display, help_text, (15, h - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (200, 200, 200), 1)
 
             cv2.imshow("Gesture Webcam Demo", display)
@@ -372,13 +279,6 @@ def run(camera=0):
                 active = not active
                 if not active:
                     stabilizer.reset()
-            elif key == ord("g"):
-                if mode == "guide_box":
-                    mode = "mediapipe" if has_mediapipe else "opencv"
-                else:
-                    mode = "guide_box"
-                stabilizer.reset()
-                print(f"-> Chuyen sang che do: {mode.upper()}")
             elif key == ord("m"):
                 mirror_mode = not mirror_mode
                 stabilizer.reset()

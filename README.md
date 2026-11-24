@@ -24,10 +24,9 @@ Model nằm trong Release thay vì Git vì file model khoảng 230 MB. Dataset v
 .\.venv\Scripts\python.exe .\main.py webcam
 ```
 
-- Chương trình tự động phát hiện và theo dõi bàn tay (MediaPipe tracking) với bộ khung xương bàn tay trực quan.
+- Chương trình dùng MediaPipe để tự động phát hiện bàn tay và vẽ khung bao quanh vùng tay. MediaPipe HandLandmarker phải khởi tạo được để chạy webcam.
 - **Phím tắt hỗ trợ:**
   - **Space**: Tạm dừng hoặc tiếp tục nhận diện.
-  - **G**: Chuyển đổi giữa chế độ **MediaPipe AI Tracking** và **Fixed Guide Box** (khung chữ nhật cố định ở giữa màn hình để đưa tay vào).
   - **M**: Bật/Tắt chế độ lật gương (Mirror view).
   - **Q** hoặc **Esc**: Thoát.
 
